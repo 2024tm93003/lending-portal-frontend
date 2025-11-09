@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import AuthScreen from "./components/AuthScreen";
 import NavigationBar from "./components/NavigationBar";
@@ -31,15 +31,17 @@ const parseProperties = (rawText) => {
 };
 
 function PortalApp() {
-  const { section } = useParams();
+  const { section, subsection } = useParams();
   const navigate = useNavigate();
-  const normalizedView = ROUTABLE_VIEWS.includes(section) ? section : DEFAULT_VIEW;
+  const isAuthRoute = section === "auth";
+  const authMode = subsection === "signup" ? "signup" : "login";
+  const requestedView = ROUTABLE_VIEWS.includes(section) ? section : DEFAULT_VIEW;
+  const view = isAuthRoute ? DEFAULT_VIEW : requestedView;
   const [apiRoot, setApiRoot] = useState("");
   const [configLoaded, setConfigLoaded] = useState(false);
   const [configError, setConfigError] = useState("");
   const [token, setToken] = useState(() => window.localStorage.getItem("lend_token") || "");
   const [user, setUser] = useState(null);
-  const [loginScreenMode, setLoginScreenMode] = useState("login");
   const [loginStuff, setLoginStuff] = useState({ username: "", password: "", displayName: "" });
   const [gearList, setGearList] = useState([]);
   const [reqs, setReqs] = useState([]);
@@ -47,19 +49,57 @@ function PortalApp() {
   const [borForm, setBorForm] = useState({ equipmentId: "", startDate: "", endDate: "", qty: 1 });
   const [equipForm, setEquipForm] = useState({ itemName: "", category: "", conditionNote: "", totalQuantity: 1 });
   const [infoText, setInfoText] = useState("");
-  const view = normalizedView;
+  const [inFlightRequests, setInFlightRequests] = useState(0);
+  const trackedFetch = useCallback((...args) => {
+    setInFlightRequests((count) => count + 1);
+    return fetch(...args).finally(() => {
+      setInFlightRequests((count) => Math.max(0, count - 1));
+    });
+  }, []);
+  const loadingIndicator =
+    inFlightRequests > 0 ? (
+      <div className="loadingIndicator" role="status" aria-live="polite">
+        <span className="spinner" aria-hidden="true" />
+        <span>Loading...</span>
+      </div>
+    ) : null;
+  const switchAuthMode = useCallback(
+    (nextMode) => {
+      if (nextMode !== "login" && nextMode !== "signup") return;
+      const target = `/auth/${nextMode}`;
+      if (section === "auth" && subsection === nextMode) return;
+      navigate(target, { replace: section === "auth" });
+    },
+    [navigate, section, subsection]
+  );
 
   useEffect(() => {
-    if (!section || section !== normalizedView) {
-      navigate(`/${normalizedView}`, { replace: true });
+    if (section === "auth" && !subsection) {
+      navigate("/auth/login", { replace: true });
     }
-  }, [section, normalizedView, navigate]);
+  }, [section, subsection, navigate]);
+
+  useEffect(() => {
+    if (isAuthRoute) return;
+    if (!section || section !== requestedView || subsection) {
+      navigate(`/${requestedView}`, { replace: true });
+    }
+  }, [section, subsection, requestedView, navigate, isAuthRoute]);
+
+  useEffect(() => {
+    if ((!token || !user) && !isAuthRoute) {
+      navigate("/auth/login", { replace: true });
+    }
+    if (token && user && isAuthRoute) {
+      navigate(`/${requestedView}`, { replace: true });
+    }
+  }, [token, user, isAuthRoute, navigate, requestedView]);
 
   useEffect(() => {
     let isMounted = true;
     const loadConfig = async () => {
       try {
-        const response = await fetch(CONFIG_PATH, { cache: "no-store" });
+        const response = await trackedFetch(CONFIG_PATH, { cache: "no-store" });
         if (!response.ok) {
           throw new Error(`Config file missing (${response.status})`);
         }
@@ -90,7 +130,7 @@ function PortalApp() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [trackedFetch]);
 
   useEffect(() => {
     if (view === "manage" && user && user.role !== "ADMIN") {
@@ -106,7 +146,7 @@ function PortalApp() {
       return;
     }
     if (!apiRoot) return;
-    fetch(`${apiRoot}/auth/me`, {
+    trackedFetch(`${apiRoot}/auth/me`, {
       headers: { "X-Auth-Token": token },
     })
       .then((res) => {
@@ -121,7 +161,7 @@ function PortalApp() {
         setToken("");
         window.localStorage.removeItem("lend_token");
       });
-  }, [token, apiRoot]);
+  }, [token, apiRoot, trackedFetch]);
 
   useEffect(() => {
     if (!token || !user || !apiRoot) return;
@@ -129,7 +169,7 @@ function PortalApp() {
     if (filterBucket.category) params.push(`category=${encodeURIComponent(filterBucket.category)}`);
     if (filterBucket.availableOnly) params.push("availableOnly=true");
     const query = params.length ? `?${params.join("&")}` : "";
-    fetch(`${apiRoot}/equipment${query}`, {
+    trackedFetch(`${apiRoot}/equipment${query}`, {
       headers: { "X-Auth-Token": token },
     })
       .then((res) => {
@@ -140,12 +180,12 @@ function PortalApp() {
       .catch(() => {
         setInfoText("Couldn't load equipment right now");
       });
-  }, [token, user, filterBucket, apiRoot]);
+  }, [token, user, filterBucket, apiRoot, trackedFetch]);
 
   useEffect(() => {
     if (!token || !user || !apiRoot) return;
     const mine = user?.role === "STUDENT" ? "?mine=true" : "";
-    fetch(`${apiRoot}/requests${mine}`, {
+    trackedFetch(`${apiRoot}/requests${mine}`, {
       headers: { "X-Auth-Token": token },
     })
       .then((res) => {
@@ -156,12 +196,12 @@ function PortalApp() {
       .catch(() => {
         setReqs([]);
       });
-  }, [token, user, apiRoot]);
+  }, [token, user, apiRoot, trackedFetch]);
 
   const handleLoginSubmit = (evt) => {
     evt.preventDefault();
-    const path = loginScreenMode === "signup" ? "signup" : "login";
-    fetch(`${apiRoot}/auth/${path}`, {
+    const path = authMode === "signup" ? "signup" : "login";
+    trackedFetch(`${apiRoot}/auth/${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(loginStuff),
@@ -188,7 +228,7 @@ function PortalApp() {
     window.localStorage.removeItem("lend_token");
     setGearList([]);
     setReqs([]);
-    navigate(`/${DEFAULT_VIEW}`);
+    navigate("/auth/login");
   };
 
   const sanitizedGearForBorrow = useMemo(() => {
@@ -202,7 +242,7 @@ function PortalApp() {
     const payload = { ...borForm, quantity: undefined };
     payload.qty = Number(borForm.qty || 1);
     payload.equipmentId = Number(borForm.equipmentId);
-    fetch(`${apiRoot}/requests`, {
+    trackedFetch(`${apiRoot}/requests`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -217,6 +257,7 @@ function PortalApp() {
       .then((req) => {
         setReqs((curr) => [req, ...curr]);
         setInfoText("Request submitted.");
+        navigate("/requests");
       })
       .catch((err) => {
         setInfoText(err?.message || "Could not make request");
@@ -226,7 +267,7 @@ function PortalApp() {
   const touchRequests = () => {
     if (!apiRoot) return;
     const mine = user?.role === "STUDENT" ? "?mine=true" : "";
-    fetch(`${apiRoot}/requests${mine}`, {
+    trackedFetch(`${apiRoot}/requests${mine}`, {
       headers: { "X-Auth-Token": token },
     })
       .then((r) => (r.ok ? r.json() : []))
@@ -240,7 +281,7 @@ function PortalApp() {
 
   const handleDecision = (id, action, msg) => {
     if (!apiRoot) return;
-    fetch(`${apiRoot}/requests/${id}/${action}`, {
+    trackedFetch(`${apiRoot}/requests/${id}/${action}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -269,7 +310,7 @@ function PortalApp() {
       totalQuantity: Number(equipForm.totalQuantity || 1),
       availableQuantity: Number(equipForm.availableQuantity || equipForm.totalQuantity || 1),
     };
-    fetch(`${apiRoot}/equipment`, {
+    trackedFetch(`${apiRoot}/equipment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -296,65 +337,74 @@ function PortalApp() {
       : "Reading config/app.properties...";
     const title = configLoaded ? "Configuration issue" : "Loading configuration";
     return (
-      <div className="appShell">
-        <div className="cardy">
-          <h2>{title}</h2>
-          <p className="tiny">{message}</p>
+      <>
+        <div className="appShell">
+          <div className="cardy">
+            <h2>{title}</h2>
+            <p className="tiny">{message}</p>
+          </div>
         </div>
-      </div>
+        {loadingIndicator}
+      </>
     );
   }
 
   if (!token || !user) {
     return (
-      <AuthScreen
-        mode={loginScreenMode}
-        onModeChange={setLoginScreenMode}
-        credentials={loginStuff}
-        onCredentialsChange={setLoginStuff}
-        onSubmit={handleLoginSubmit}
-        infoText={infoText}
-      />
+      <>
+        <AuthScreen
+          mode={authMode}
+          onModeChange={switchAuthMode}
+          credentials={loginStuff}
+          onCredentialsChange={setLoginStuff}
+          onSubmit={handleLoginSubmit}
+          infoText={infoText}
+        />
+        {loadingIndicator}
+      </>
     );
   }
 
   const canSubmitBorrow = user.role === "STUDENT" || user.role === "STAFF";
 
   return (
-    <div className="appShell">
-      <header>
-        <h1>Equipment Lending Portal</h1>
-        <p className="tiny">
-          Signed in as {user.displayName} ({user.role})
-        </p>
-      </header>
-      <NavigationBar view={view} onChange={handleViewChange} role={user.role} onLogout={logout} />
-      {infoText && <p className="tiny">{infoText}</p>}
-      {view === "dashboard" && (
-        <>
-          <EquipmentCatalog items={gearList} filters={filterBucket} onFiltersChange={setFilterBucket} />
-          {canSubmitBorrow && (
-            <BorrowRequestForm
-              items={sanitizedGearForBorrow}
-              formState={borForm}
-              onChange={setBorForm}
-              onSubmit={submitBorrow}
-            />
-          )}
-        </>
-      )}
-      {view === "requests" && <RequestTable requests={reqs} role={user.role} onDecision={handleDecision} />}
-      {view === "manage" && user.role === "ADMIN" && (
-        <ManageEquipmentForm formState={equipForm} onChange={setEquipForm} onSubmit={createEquipment} />
-      )}
-    </div>
+    <>
+      <div className="appShell">
+        <header>
+          <h1>Equipment Lending Portal</h1>
+          <p className="tiny">
+            Signed in as {user.displayName} ({user.role})
+          </p>
+        </header>
+        <NavigationBar view={view} onChange={handleViewChange} role={user.role} onLogout={logout} />
+        {infoText && <p className="tiny">{infoText}</p>}
+        {view === "dashboard" && (
+          <>
+            <EquipmentCatalog items={gearList} filters={filterBucket} onFiltersChange={setFilterBucket} />
+            {canSubmitBorrow && (
+              <BorrowRequestForm
+                items={sanitizedGearForBorrow}
+                formState={borForm}
+                onChange={setBorForm}
+                onSubmit={submitBorrow}
+              />
+            )}
+          </>
+        )}
+        {view === "requests" && <RequestTable requests={reqs} role={user.role} onDecision={handleDecision} />}
+        {view === "manage" && user.role === "ADMIN" && (
+          <ManageEquipmentForm formState={equipForm} onChange={setEquipForm} onSubmit={createEquipment} />
+        )}
+      </div>
+      {loadingIndicator}
+    </>
   );
 }
 
 function App() {
   return (
     <Routes>
-      <Route path="/:section?" element={<PortalApp />} />
+      <Route path="/:section?/:subsection?" element={<PortalApp />} />
       <Route path="*" element={<Navigate to={`/${DEFAULT_VIEW}`} replace />} />
     </Routes>
   );

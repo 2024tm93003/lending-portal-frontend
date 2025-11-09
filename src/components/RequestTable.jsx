@@ -34,17 +34,23 @@ const RequestTable = ({ requests, role, onDecision }) => {
                 <td className="actions">
                   {request.status === "PENDING" && (
                     <>
-                      <button onClick={() => onDecision(request.id, "approve")}>Approve</button>
-                      <button className="danger" onClick={() => onDecision(request.id, "reject", "not available")}>
+                      <button className="btn btnPrimary" onClick={() => onDecision(request.id, "approve")}>
+                        Approve
+                      </button>
+                      <button className="btn btnDanger" onClick={() => onDecision(request.id, "reject", "not available")}>
                         Reject
                       </button>
                     </>
                   )}
                   {request.status === "APPROVED" && (
-                    <button onClick={() => onDecision(request.id, "issue")}>Mark Issued</button>
+                    <button className="btn btnPrimary" onClick={() => onDecision(request.id, "issue")}>
+                      Mark Issued
+                    </button>
                   )}
                   {request.status === "ISSUED" && (
-                    <button onClick={() => onDecision(request.id, "return")}>Close Return</button>
+                    <button className="btn btnPrimary" onClick={() => onDecision(request.id, "return")}>
+                      Close Return
+                    </button>
                   )}
                 </td>
               )}
@@ -52,7 +58,7 @@ const RequestTable = ({ requests, role, onDecision }) => {
           ))}
           {requests.length === 0 && (
             <tr>
-              <td colSpan={emptyColSpan} style={{ textAlign: "center" }}>
+              <td colSpan={emptyColSpan} className="tableEmpty">
                 No requests found.
               </td>
             </tr>

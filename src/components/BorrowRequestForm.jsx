@@ -22,7 +22,7 @@ const BorrowRequestForm = ({ items, formState, onChange, onSubmit }) => {
         <input type="date" value={formState.endDate} onChange={updateField("endDate")} required />
         <label>Quantity</label>
         <input type="number" min="1" value={formState.qty} onChange={updateField("qty")} />
-        <button type="submit" style={{ marginTop: 8 }}>
+        <button type="submit" className="btn btnPrimary btnFull">
           Submit Request
         </button>
       </form>

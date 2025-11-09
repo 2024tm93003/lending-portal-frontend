@@ -31,6 +31,7 @@ a {
 .equipGrid {
   display: grid;
   gap: 16px;
+  margin-top: 18px;
 }
 
 @media (min-width: 780px) {
@@ -44,6 +45,11 @@ a {
   border-radius: 6px;
   padding: 12px;
   background: #fffdf4;
+}
+
+.equipTile h3 {
+  margin: 0 0 6px 0;
+  font-size: 1.1rem;
 }
 
 .navbarish {
@@ -136,23 +142,161 @@ textarea {
   color: #6b21a8;
 }
 
-.actions button {
-  margin-right: 8px;
-  margin-top: 6px;
-  border: none;
-  border-radius: 5px;
-  padding: 6px 12px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  background-color: #1d4ed8;
-  color: white;
-}
-
-.actions button.danger {
-  background-color: #dc2626;
-}
-
 .tiny {
   font-size: 0.8rem;
   color: #475569;
+}
+
+.btn {
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  background: #0e7490;
+  color: white;
+}
+
+.btnSecondary {
+  background: #94a3b8;
+  color: #0f172a;
+}
+
+.btnGhost {
+  background: transparent;
+  color: #0e7490;
+  border: 1px solid #0e7490;
+}
+
+.btnDanger {
+  background: #dc2626;
+  color: white;
+}
+
+.btnFull {
+  width: 100%;
+}
+
+.btn + .btn {
+  margin-left: 6px;
+}
+
+.actions .btn {
+  margin: 6px 8px 0 0;
+}
+
+.btn + .btn {
+  margin-left: 6px;
+}
+
+.actions .btn {
+  margin: 6px 8px 0 0;
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filterGroup {
+  flex: 1 1 220px;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.tableEmpty {
+  text-align: center;
+  color: #475569;
+}
+
+.loadingIndicator {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
+  z-index: 1000;
+}
+
+.loadingIndicator .spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid #bae6fd;
+  border-top-color: #0ea5e9;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.authModal {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.authCardSimple {
+  width: 100%;
+  max-width: 420px;
+}
+
+.authTabs {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.authTabs button {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.authTabs button.active {
+  background: #0e7490;
+  color: white;
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.authForm button {
+  margin-top: 4px;
+}
+
+.authCardSimple .tiny {
+  margin-top: 8px;
 }

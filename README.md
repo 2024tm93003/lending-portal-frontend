@@ -65,9 +65,11 @@ Build the image (optionally point at a different property file inside the repo):
 
 ```sh
 docker build \
-  --build-arg APP_CONFIG_FILE=config/prod.app.properties \
+  --build-arg APP_CONFIG_FILE=config/app.properties \
   -t lending-portal-frontend:latest .
 ```
+
+A starter `config/app.properties` lives in the repo with `API_ROOT=http://localhost:8080/api`. Tweak it (or point at your own file) before invoking the build so the correct backend endpoint gets baked into the image.
 
 > The file you pass to `APP_CONFIG_FILE` must live inside the build context (this repo). It will be copied to `public/config/app.properties` before the Vite build runs.
 
@@ -94,8 +96,8 @@ docker compose up --build
 Useful overrides:
 
 ```sh
-APP_CONFIG_FILE=config/prod.api.properties \
-APP_CONFIG_PATH=./config/prod.api.properties \
+APP_CONFIG_FILE=config/app.properties \
+APP_CONFIG_PATH=./config/app.properties \
 FRONTEND_PORT=8081 \
 docker compose up --build
 ```

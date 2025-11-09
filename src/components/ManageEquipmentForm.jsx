@@ -17,7 +17,7 @@ const ManageEquipmentForm = ({ formState, onChange, onSubmit }) => {
         <input type="number" value={formState.totalQuantity} min="1" onChange={updateField("totalQuantity")} />
         <label>Available Now</label>
         <input value={formState.availableQuantity ?? ""} type="number" onChange={updateField("availableQuantity")} />
-        <button type="submit" style={{ marginTop: 12 }}>
+        <button type="submit" className="btn btnPrimary btnFull">
           Save Item
         </button>
       </form>

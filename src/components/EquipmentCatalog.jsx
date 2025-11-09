@@ -6,16 +6,12 @@ const EquipmentCatalog = ({ items, filters, onFiltersChange }) => {
   return (
     <div className="cardy">
       <h2>Equipment Catalog</h2>
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 200px" }}>
+      <div className="filterRow">
+        <div className="filterGroup">
           <label>Filter by category</label>
-          <input
-            value={filters.category}
-            placeholder="Sports, Camera..."
-            onChange={(event) => updateFilters({ category: event.target.value })}
-          />
+          <input value={filters.category} onChange={(event) => updateFilters({ category: event.target.value })} />
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <label className="checkboxRow">
           <input
             type="checkbox"
             checked={filters.availableOnly}
@@ -24,10 +20,10 @@ const EquipmentCatalog = ({ items, filters, onFiltersChange }) => {
           only show available
         </label>
       </div>
-      <div className="equipGrid" style={{ marginTop: 18 }}>
+      <div className="equipGrid">
         {items.map((equip) => (
           <div key={equip.id} className="equipTile">
-            <h3 style={{ margin: "0 0 6px 0" }}>{equip.itemName}</h3>
+            <h3>{equip.itemName}</h3>
             <p className="tiny">{equip.category}</p>
             <p>{equip.conditionNote}</p>
             <p className="tiny">

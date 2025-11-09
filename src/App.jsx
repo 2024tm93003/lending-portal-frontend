@@ -87,7 +87,7 @@ function PortalApp() {
   }, [section, subsection, requestedView, navigate, isAuthRoute]);
 
   useEffect(() => {
-    if ((!token || !user) && !isAuthRoute) {
+    if (!token && !isAuthRoute) {
       navigate("/auth/login", { replace: true });
     }
     if (token && user && isAuthRoute) {
